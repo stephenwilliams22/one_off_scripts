@@ -1,0 +1,93 @@
+#!/bin/bash
+
+###This tool will split a .bam file by chromosome and remove the AX and XS tags that confuse HipSTR
+
+#help output
+if [ "$1" == "-h" ]; then
+ echo "PLEASE USE ABSOLUTE PATHS!"
+ echo "Usage: `basename $0` [.bam]"
+  exit 0
+fi
+
+#make sure there is an inputfile
+if [ $# -eq 0 ]
+  then
+    echo "No arguments supplied"
+    echo "Use -h for info"
+    exit 1
+fi
+
+#bamtools split -in $1 -reference
+
+echo "-------Splitting .bam file------"
+
+samtools view -b $1 chr1 > $1_chr1.bam &
+samtools view -b $1 chr2 > $1_chr2.bam &
+samtools view -b $1 chr3 > $1_chr3.bam &
+samtools view -b $1 chr4 > $1_chr4.bam &
+samtools view -b $1 chr5 > $1_chr5.bam &
+samtools view -b $1 chr6 > $1_chr6.bam &
+samtools view -b $1 chr7 > $1_chr7.bam &
+samtools view -b $1 chr8 > $1_chr8.bam &
+samtools view -b $1 chr9 > $1_chr9.bam &
+samtools view -b $1 chr10 > $1_chr10.bam &
+samtools view -b $1 chr11 > $1_chr11.bam &
+samtools view -b $1 chr12 > $1_chr12.bam &
+samtools view -b $1 chr13 > $1_chr13.bam &
+samtools view -b $1 chr14 > $1_chr14.bam &
+samtools view -b $1 chr15 > $1_chr15.bam &
+samtools view -b $1 chr16 > $1_chr16.bam &
+samtools view -b $1 chr17 > $1_chr17.bam &
+samtools view -b $1 chr18 > $1_chr18.bam &
+samtools view -b $1 chr19 > $1_chr19.bam &
+samtools view -b $1 chr20 > $1_chr20.bam &
+samtools view -b $1 chr21 > $1_chr21.bam &
+samtools view -b $1 chr22 > $1_chr22.bam &
+samtools view -b $1 chrX > $1_chrX.bam &
+samtools view -b $1 chrY > $1_chrY.bam &
+
+
+wait
+
+echo "------Removing AS and XS tags------"
+
+bam squeeze --noeof --rmTags "AS:f;XS:f" --in $1_chr1.bam --out $1.chr1.noASXS.bam &
+bam squeeze --noeof --rmTags "AS:f;XS:f" --in $1_chr2.bam --out $1.chr2.noASXS.bam &
+bam squeeze --noeof --rmTags "AS:f;XS:f" --in $1_chr3.bam --out $1.chr3.noASXS.bam &
+bam squeeze --noeof --rmTags "AS:f;XS:f" --in $1_chr4.bam --out $1.chr4.noASXS.bam &
+bam squeeze --noeof --rmTags "AS:f;XS:f" --in $1_chr5.bam --out $1.chr5.noASXS.bam &
+bam squeeze --noeof --rmTags "AS:f;XS:f" --in $1_chr6.bam --out $1.chr6.noASXS.bam &
+bam squeeze --noeof --rmTags "AS:f;XS:f" --in $1_chr7.bam --out $1.chr7.noASXS.bam &
+bam squeeze --noeof --rmTags "AS:f;XS:f" --in $1_chr8.bam --out $1.chr8.noASXS.bam &
+bam squeeze --noeof --rmTags "AS:f;XS:f" --in $1_chr9.bam --out $1.chr9.noASXS.bam &
+bam squeeze --noeof --rmTags "AS:f;XS:f" --in $1_chr10.bam --out $1.chr10.noASXS.bam &
+bam squeeze --noeof --rmTags "AS:f;XS:f" --in $1_chr11.bam --out $1.chr11.noASXS.bam &
+bam squeeze --noeof --rmTags "AS:f;XS:f" --in $1_chr12.bam --out $1.chr12.noASXS.bam &
+bam squeeze --noeof --rmTags "AS:f;XS:f" --in $1_chr13.bam --out $1.chr13.noASXS.bam &
+bam squeeze --noeof --rmTags "AS:f;XS:f" --in $1_chr14.bam --out $1.chr14.noASXS.bam &
+bam squeeze --noeof --rmTags "AS:f;XS:f" --in $1_chr15.bam --out $1.chr15.noASXS.bam &
+bam squeeze --noeof --rmTags "AS:f;XS:f" --in $1_chr16.bam --out $1.chr16.noASXS.bam &
+bam squeeze --noeof --rmTags "AS:f;XS:f" --in $1_chr17.bam --out $1.chr17.noASXS.bam &
+bam squeeze --noeof --rmTags "AS:f;XS:f" --in $1_chr18.bam --out $1.chr18.noASXS.bam &
+bam squeeze --noeof --rmTags "AS:f;XS:f" --in $1_chr19.bam --out $1.chr19.noASXS.bam &
+bam squeeze --noeof --rmTags "AS:f;XS:f" --in $1_chr20.bam --out $1.chr20.noASXS.bam &
+bam squeeze --noeof --rmTags "AS:f;XS:f" --in $1_chr21.bam --out $1.chr21.noASXS.bam &
+bam squeeze --noeof --rmTags "AS:f;XS:f" --in $1_chr22.bam --out $1.chr22.noASXS.bam &
+bam squeeze --noeof --rmTags "AS:f;XS:f" --in $1_chrX.bam --out $1.chrX.noASXS.bam &
+bam squeeze --noeof --rmTags "AS:f;XS:f" --in $1_chrY.bam --out $1.chrY.noASXS.bam &
+
+wait
+
+echo "------Merging untagged .bams------"
+
+samtools merge $1.REF.noASXS.bam $1.chr* -@ 20
+
+wait
+
+echo "------Making index------"
+
+samtools index $1.REF.noASXS.bam
+
+echo "------Cleaning up------"
+
+rm *chr*
