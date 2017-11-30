@@ -1,0 +1,71 @@
+#!/bin/bash
+
+#take a 10x VCF and make a gemini DB out of it. Then do a gemini query that can be adjusted. 
+
+if [ "$1" == "-h" ]; then
+  echo "Usage: `basename $0` [my.vcf outputname]"
+  exit 0
+fi
+
+
+#make sure there is an inputfile
+if [ $# -eq 0 ]
+  then
+    echo "No arguments supplied"
+    echo "Use -h for info"
+    exit 1
+fi
+
+echo NORMALIZING YOUR VCF
+#need to normalize and left align the vcf to work nicely with VEP and GEMINI
+vt decompose -s $1 | vt normalize -r /mnt/opt/refdata_new/hg19-2.0.0/fasta/genome.fa - > $2.out.vcf
+
+wait
+
+echo RUNNING VEP
+#annotate with VEP
+vep -i $2.out.vcf -o $2.VEP.vcf --vcf \
+    --cache --dir /mnt/home/stephen/.vep/hg19 --port 3337 \
+    -af_gnomad \
+    --all_refseq \
+    --sift b \
+    --polyphen b \
+    --symbol \
+    --numbers \
+    --biotype \
+    --total_length --canonical --ccds \
+    --fork 20 \
+    --buffer_size 10000 \
+    --fields Consequence,Codons,Amino_acids,Gene,SYMBOL,Feature,EXON,PolyPhen,SIFT,Protein_position,BIOTYPE,CANONICAL,CCDS
+wait
+
+echo MAKING GEMINI DATABASE
+
+#make the gemini db and filter all variants that don't pass for quality. Completely depends on the data
+#you are loading. If the VCF is too big Hydra runs out of temp room and this step fails.
+gemini load -v $2.VEP.vcf \
+    -t VEP \
+    --cores 20 \
+    --skip-gene-tables \
+    --passonly \
+      $2.hg19.db
+
+wait
+
+#query and filter lots of things. feel free to adjust for your needs
+gemini query -q "SELECT chrom, start, end, phase_set,ref, alt, rs_ids, \
+        aaf_gnomad_all,  qual, filter, gene, polyphen_score, \
+        is_lof, clinvar_sig, impact, clinvar_disease_name from variants WHERE aaf_esp_all <= 0.01 \
+        and aaf_1kg_all <= 0.01 and aaf_exac_all <= 0.01 and aaf_gnomad_all <= 0.01 \
+        and filter is NULL and impact NOT IN ('synonymous_variant','intron_variant', \
+        '3_prime_UTR_variant', '5_prime_UTR_variant', 'downstream_gene_variant', \
+        'intergenic_variant', 'intron_variant', 'non_coding_transcript_exon_variant', \
+        'none', 'splice_region_variant', 'upstream_gene_variant')" \
+        $2.hg19.db --header | column -t > $2.tsv
+
+wait
+
+echo CLEANING UP
+rm $2.out.vcf $2.VEP.vcf
+
+echo DONE!!!
