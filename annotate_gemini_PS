@@ -1,0 +1,56 @@
+#!/bin/bash
+
+#annotate a gemini DB with the PS field of a VCF
+
+#help output
+if [ "$1" == "-h" ]; then
+ echo "PLEASE USE ABSOLUTE PATHS!"
+ echo "Usage: `basename $0` [vcf to extract PS and annotate] [gemini db to annotate]"
+  exit 0
+fi
+
+#make sure there is an inputfile
+if [ $# -eq 0 ]
+  then
+    echo "No arguments supplied"
+    echo "Use -h for info"
+    exit 1
+fi
+
+
+
+#extract the PS field
+
+echo "-------Extracting PS field------"
+
+vcftools --gzvcf $1 --extract-FORMAT-info PS --stdout > annots1.tab; sed -i '1d' annots1.tab
+
+#print it in .bed format
+awk '{print $1,$2,$2,$3,$4}' annots1.tab > annots.tab
+
+sed -i 's/-1/0/g' annots.tab
+
+sed -i 's/ /\t/g' annots.tab
+
+bgzip annots.tab
+tabix -s1 -b2 -e3  annots.tab.gz
+
+echo "--------Annotating your VCF----------"
+
+#annotate the VCF
+bcftools annotate -a annots.tab.gz -h /mnt/home/stephen/Apps/bin/annots.hdr -c CHROM,FROM,TO,INFO/PS_tag $1 -o temp.vcf
+
+#bgzip and index
+bgzip temp.vcf
+tabix -p vcf temp.vcf.gz
+
+#perform annotation of the gemini DB
+
+echo "---------Annotating your Gemini DB-----------"
+
+gemini annotate -f temp.vcf.gz -a extract -c phase_set -t integer -e PS_tag -o list $2
+
+echo "--------Cleaning up----------"
+
+rm annots1.tab
+rm temp.vcf.gz*
