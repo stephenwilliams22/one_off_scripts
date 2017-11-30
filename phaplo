@@ -1,0 +1,62 @@
+#!/bin/bash
+
+#Run haplosaurus in parallel
+
+
+if [ "$1" == "-h" ]; then
+  echo "Usage: `basename $0` [my.vcf]"
+  exit 0
+fi
+
+
+#make sure there is an inputfile
+if [ $# -eq 0 ]
+  then
+    echo "No arguments supplied"
+    echo "Use -h for info"
+    exit 1
+fi
+
+
+#grab the header
+head -n 10000 $1 | grep "^#" >header
+#grab the non header lines
+grep -v "^#" $1 >variants
+#split into chunks with 1000 lines
+split --number=10 variants
+
+wait
+
+#put the headers back on
+cat header xaa > xaa.header &
+cat header xab > xab.header &
+cat header xac > xac.header &
+cat header xad > xad.header &
+cat header xae > xae.header &
+cat header xaf > xaf.header &
+cat header xag > xag.header &
+cat header xah > xah.header &
+cat header xai > xai.header &
+cat header xaj > xaj.header &
+
+wait
+
+#run haplo
+haplo -i xaa.header -o xaa.haplo.tsv --cache --port 3337 --dir /mnt/home/stephen/.vep/hg19/ &
+haplo -i xab.header -o xab.haplo.tsv --cache --port 3337 --dir /mnt/home/stephen/.vep/hg19/ &
+haplo -i xac.header -o xac.haplo.tsv --cache --port 3337 --dir /mnt/home/stephen/.vep/hg19/ &
+haplo -i xad.header -o xad.haplo.tsv --cache --port 3337 --dir /mnt/home/stephen/.vep/hg19/ &
+haplo -i xae.header -o xae.haplo.tsv --cache --port 3337 --dir /mnt/home/stephen/.vep/hg19/ &
+haplo -i xaf.header -o xaf.haplo.tsv --cache --port 3337 --dir /mnt/home/stephen/.vep/hg19/ &
+haplo -i xag.header -o xag.haplo.tsv --cache --port 3337 --dir /mnt/home/stephen/.vep/hg19/ &
+haplo -i xah.header -o xah.haplo.tsv --cache --port 3337 --dir /mnt/home/stephen/.vep/hg19/ &
+haplo -i xai.header -o xai.haplo.tsv --cache --port 3337 --dir /mnt/home/stephen/.vep/hg19/ &
+haplo -i xaj.header -o xaj.haplo.tsv --cache --port 3337 --dir /mnt/home/stephen/.vep/hg19/ &
+
+wait
+
+cat xa*.haplo.tsv  > $1.haplo.tsv
+cat /mnt/home/stephen/Apps/bin/haplo.header $1.haplo.tsv
+
+
+rm -f header variants xa*.haplo.vcf *.header
