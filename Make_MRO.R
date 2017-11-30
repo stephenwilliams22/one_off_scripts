@@ -7,12 +7,13 @@ df <- read.delim("your lena IDs")
 
 for (i in 1:nrow(df)) {
 fileConn<-file(paste("/dir/to/put/MROs",df[i,1],".mro", sep = ""))
-  writeLines(paste("@include simple_bc_count.mro \n call _CNV_EXOME( \n fragments_h5 = ",'"',find_wgs_fragments.h5(df[i,1]),'"',",", 
+  writeLines(paste('@include "simple_bc_count.mro" \n call _CNV_EXOME( \n fragments_h5 = ','"',find_wgs_fragments.h5(df[i,1]),'"',",", 
                    "\n fragment_phasing =", '"',find_fragment_phase(df[i,1]),'"',",",
                    "\n phased_possorted_bam =",'"',find_bam(df[i,1]),'"',",",
-                   '\n queryRegions ="Heidi.bed"',",",
-                   "\n bin=50",
+                   '\n queryRegions ="YOUR_REGIONS.bed"',",",
+                   "\n bin=50,",
                    "\n )", sep = ""), fileConn)
   close(fileConn)
   
 }
+
